@@ -1,5 +1,5 @@
 import React from 'react';
-import { INITIAL_USERS } from '../../config/constants';
+import { INITIAL_USERS } from '../../data/mockData';
 
 const LoginScreen = ({ onBack, authState, onInitiateLogin, onDemoLogin, onClearError }) => {
   const { isLoading, error } = authState;

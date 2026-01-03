@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AUTH_ERRORS } from '../config/constants';
+import { AUTH_ERRORS } from '../config/discord';
 import { getDiscordOAuthUrl, mockDiscordAuth } from '../utils/helpers';
 
 // Custom hook for Discord OAuth

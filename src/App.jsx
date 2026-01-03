@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useDiscordAuth from './hooks/useDiscordAuth';
-import { 
-  INITIAL_USERS, 
-  INITIAL_CREWS, 
-  INITIAL_REQUESTS, 
-  SERVICE_TYPES,
-  DISCORD_INVITE_LINK 
-} from './config/constants';
+import { INITIAL_USERS, INITIAL_CREWS, INITIAL_REQUESTS } from './data/mockData';
+import { SERVICE_TYPES } from './config/constants';
+import { DISCORD_INVITE_LINK } from './config/discord';
 import { generateId } from './utils/helpers';
 import Header from './components/layout/Header';
 import NavTabs from './components/layout/NavTabs';

@@ -1,4 +1,4 @@
-import { DISCORD_OAUTH_CONFIG, DISCORD_AUTH_CONFIG, AUTH_ERRORS } from '../config/constants';
+import { DISCORD_OAUTH_CONFIG, DISCORD_AUTH_CONFIG, AUTH_ERRORS } from '../config/discord';
 
 // Helper functions
 export const formatTime = (timestamp) => {
