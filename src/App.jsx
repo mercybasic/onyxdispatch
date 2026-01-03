@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import useDiscordAuth from './hooks/useDiscordAuth';
 import { INITIAL_USERS, INITIAL_CREWS, INITIAL_REQUESTS } from './data/mockData';
-import { SERVICE_TYPES } from './config/constants';
 import { DISCORD_INVITE_LINK } from './config/discord';
 import { generateId } from './utils/helpers';
 import Header from './components/layout/Header';
@@ -23,7 +22,6 @@ export default function DispatchSystem() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [toast, setToast] = useState(null);
-  const [selectedRequest, setSelectedRequest] = useState(null);
 
   // Discord OAuth authentication
   const { 
@@ -233,13 +231,12 @@ export default function DispatchSystem() {
         )}
 
         {toast && (
-          <Toast 
-            message={toast.message} 
+          <Toast
+            message={toast.message}
             type={toast.type}
             onClose={() => setToast(null)}
           />
         )}
       </div>
-    </>
   );
 }
