@@ -137,52 +137,44 @@ export default function DispatchSystem() {
   // Show landing page for unauthenticated users
   if (!isAuthenticated && !showLogin) {
     return (
-      <>
-        <style>{styles}</style>
-        <div className="dispatch-app">
-          <div className="grid-overlay"></div>
-          <div className="scanline"></div>
-          <LandingPage 
-            onSubmitRequest={handleClientRequest}
-            onShowLogin={() => setShowLogin(true)}
-            discordInviteLink={DISCORD_INVITE_LINK}
+      <div className="dispatch-app">
+        <div className="grid-overlay"></div>
+        <div className="scanline"></div>
+        <LandingPage
+          onSubmitRequest={handleClientRequest}
+          onShowLogin={() => setShowLogin(true)}
+          discordInviteLink={DISCORD_INVITE_LINK}
+        />
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
           />
-          {toast && (
-            <Toast 
-              message={toast.message} 
-              type={toast.type}
-              onClose={() => setToast(null)}
-            />
-          )}
-        </div>
-      </>
+        )}
+      </div>
     );
   }
 
   // Show login screen
   if (!isAuthenticated && showLogin) {
     return (
-      <>
-        <style>{styles}</style>
-        <div className="dispatch-app">
-          <div className="grid-overlay"></div>
-          <div className="scanline"></div>
-          <LoginScreen 
-            onBack={() => setShowLogin(false)}
-            authState={{ isLoading: authLoading, error: authError }}
-            onInitiateLogin={initiateLogin}
-            onDemoLogin={handleDemoLogin}
-            onClearError={clearAuthError}
-          />
-        </div>
-      </>
+      <div className="dispatch-app">
+        <div className="grid-overlay"></div>
+        <div className="scanline"></div>
+        <LoginScreen
+          onBack={() => setShowLogin(false)}
+          authState={{ isLoading: authLoading, error: authError }}
+          onInitiateLogin={initiateLogin}
+          onDemoLogin={handleDemoLogin}
+          onClearError={clearAuthError}
+        />
+      </div>
     );
   }
 
   return (
-    <>
-      <style>{styles}</style>
-      <div className="dispatch-app">
+    <div className="dispatch-app">
         <div className="grid-overlay"></div>
         <div className="scanline"></div>
         
