@@ -1,5 +1,4 @@
-import React from 'react';
-import { INITIAL_USERS } from '../../data/mockData';
+import { DISCORD_INVITE_LINK } from '../../config/discord';
 
 const LoginScreen = ({ onBack, authState, onInitiateLogin, onDemoLogin, onClearError }) => {
   const { isLoading, error } = authState;

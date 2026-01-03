@@ -1,15 +1,22 @@
 # Deployment Fixes for Bolt.new
 
-## Critical Runtime Error Fixed ✅
+## Critical Runtime Errors Fixed ✅
 
-### **Empty Page Issue**
-- **Problem**: Page loaded blank with no content
+### **Issue #1: Empty Landing Page**
+- **Problem**: Main page loaded blank with no content
 - **Root Cause**: App.jsx was trying to inject inline styles with `<style>{styles}</style>`, but the `styles` variable didn't exist (CSS was extracted to main.css)
 - **Additionally**: Orphaned closing fragment tag `</>` at line 243 caused JSX syntax error
 - **Fix**:
   - Removed all references to the non-existent `styles` variable
   - Removed orphaned `</>` closing tags
   - Cleaned up unused imports (React, SERVICE_TYPES, selectedRequest)
+
+### **Issue #2: Empty Login Screen**
+- **Problem**: Clicking "Staff Login" button showed blank page
+- **Root Cause**: LoginScreen.jsx was using `DISCORD_INVITE_LINK` on line 96 but didn't import it
+- **Fix**:
+  - Added missing import: `import { DISCORD_INVITE_LINK } from '../../config/discord'`
+  - Removed unused import: `INITIAL_USERS`
 
 ## Previous Issues Fixed
 
