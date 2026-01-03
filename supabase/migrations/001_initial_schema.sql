@@ -4,6 +4,19 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Crews table (must be created first due to foreign key reference from users)
+CREATE TABLE crews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  callsign TEXT UNIQUE NOT NULL,
+  ship TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'offline' CHECK (status IN ('available', 'on-mission', 'standby', 'offline')),
+  location TEXT,
+  capabilities TEXT[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Users table (synced with Discord)
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -14,19 +27,6 @@ CREATE TABLE users (
   role TEXT NOT NULL CHECK (role IN ('dispatcher', 'pilot', 'crew')),
   online BOOLEAN DEFAULT false,
   crew_id UUID REFERENCES crews(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Crews table
-CREATE TABLE crews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  callsign TEXT UNIQUE NOT NULL,
-  ship TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'offline' CHECK (status IN ('available', 'on-mission', 'standby', 'offline')),
-  location TEXT,
-  capabilities TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
