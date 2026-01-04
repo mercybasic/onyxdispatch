@@ -3,6 +3,7 @@ import useDiscordAuth from './hooks/useDiscordAuth';
 import { INITIAL_USERS, INITIAL_CREWS, INITIAL_REQUESTS } from './data/mockData';
 import { DISCORD_INVITE_LINK } from './config/discord';
 import { generateId } from './utils/helpers';
+import { validateEnvVars } from './config/env-check';
 import Header from './components/layout/Header';
 import NavTabs from './components/layout/NavTabs';
 import LandingPage from './components/views/LandingPage';
@@ -38,6 +39,18 @@ export default function DispatchSystem() {
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
+
+  // Check environment variables on mount
+  useEffect(() => {
+    const envValidation = validateEnvVars();
+    if (!envValidation.isValid && !import.meta.env.DEV) {
+      console.error('Environment configuration error:', envValidation);
+      if (envValidation.placeholder.length > 0) {
+        const placeholderVars = envValidation.placeholder.map(p => p.key).join(', ');
+        showToast(`Configuration Error: ${placeholderVars} not set in deployment`, 'error');
+      }
+    }
+  }, [showToast]);
 
   // Show toast on successful login
   useEffect(() => {
