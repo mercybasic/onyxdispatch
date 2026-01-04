@@ -180,35 +180,65 @@ export const useSupabaseData = (currentUser) => {
     }
   };
 
-  // Update user's last_seen timestamp (heartbeat)
-  const updatePresence = async (userId) => {
-    if (!supabase || !userId) return;
+  // Update user's last_seen timestamp (heartbeat - accepts either database UUID or discord_id)
+  const updatePresence = async (userIdentifier) => {
+    if (!supabase || !userIdentifier) return;
 
     try {
-      await supabase
+      // Try to update by discord_id first (most common case)
+      const { data, error } = await supabase
         .from('users')
         .update({
           online: true,
           last_seen: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('discord_id', userIdentifier)
+        .select();
+
+      // If no rows updated, try by database id
+      if (data && data.length === 0) {
+        await supabase
+          .from('users')
+          .update({
+            online: true,
+            last_seen: new Date().toISOString()
+          })
+          .eq('id', userIdentifier);
+      }
+
+      if (error) throw error;
     } catch (err) {
       console.error('Error updating presence:', err);
     }
   };
 
-  // Set user offline
-  const setUserOffline = async (userId) => {
-    if (!supabase || !userId) return;
+  // Set user offline (accepts either database UUID or discord_id)
+  const setUserOffline = async (userIdentifier) => {
+    if (!supabase || !userIdentifier) return;
 
     try {
-      await supabase
+      // Try to update by discord_id first (most common case)
+      const { data, error } = await supabase
         .from('users')
         .update({
           online: false,
           last_seen: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('discord_id', userIdentifier)
+        .select();
+
+      // If no rows updated, try by database id
+      if (data && data.length === 0) {
+        await supabase
+          .from('users')
+          .update({
+            online: false,
+            last_seen: new Date().toISOString()
+          })
+          .eq('id', userIdentifier);
+      }
+
+      if (error) throw error;
     } catch (err) {
       console.error('Error setting user offline:', err);
     }

@@ -131,16 +131,16 @@ export default function DispatchSystem() {
 
   // Presence heartbeat - update last_seen every 60 seconds
   useEffect(() => {
-    if (!isAuthenticated || !currentUser?.id) {
+    if (!isAuthenticated || !currentUser?.discordId) {
       return;
     }
 
     // Initial presence update
-    updatePresence(currentUser.id);
+    updatePresence(currentUser.discordId);
 
     // Set up heartbeat interval (every 60 seconds)
     const heartbeatInterval = setInterval(() => {
-      updatePresence(currentUser.id);
+      updatePresence(currentUser.discordId);
     }, 60000); // 60 seconds
 
     // Clean up on unmount or user change
@@ -151,18 +151,18 @@ export default function DispatchSystem() {
 
   // Handle page unload/close - set user offline
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.discordId) return;
 
     const handleBeforeUnload = () => {
       // Set user offline when page is closing
-      setUserOffline(currentUser.id);
+      setUserOffline(currentUser.discordId);
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setUserOffline(currentUser.id);
+        setUserOffline(currentUser.discordId);
       } else {
-        updatePresence(currentUser.id);
+        updatePresence(currentUser.discordId);
       }
     };
 
@@ -177,8 +177,8 @@ export default function DispatchSystem() {
 
   const handleLogout = async () => {
     // Set user offline before logging out
-    if (currentUser?.id) {
-      await setUserOffline(currentUser.id);
+    if (currentUser?.discordId) {
+      await setUserOffline(currentUser.discordId);
     }
     logout();
     setShowLogin(false);
