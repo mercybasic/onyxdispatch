@@ -176,13 +176,25 @@ export default function DispatchSystem() {
   }, [currentUser, setUserOffline, updatePresence]);
 
   const handleLogout = async () => {
-    // Set user offline before logging out
-    if (currentUser?.discordId) {
-      await setUserOffline(currentUser.discordId);
+    console.log('handleLogout called, currentUser:', currentUser);
+
+    try {
+      // Set user offline before logging out
+      if (currentUser?.discordId) {
+        console.log('Setting user offline with discordId:', currentUser.discordId);
+        await setUserOffline(currentUser.discordId);
+        console.log('User set offline successfully');
+      }
+
+      console.log('Calling logout...');
+      await logout();
+      console.log('Logout completed');
+
+      setShowLogin(false);
+      setActiveTab('dashboard');
+    } catch (error) {
+      console.error('Error during logout:', error);
     }
-    logout();
-    setShowLogin(false);
-    setActiveTab('dashboard');
   };
 
   const handleClientRequest = async (formData) => {

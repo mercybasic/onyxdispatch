@@ -142,17 +142,23 @@ export const useDiscordAuth = () => {
 
 
   const logout = async () => {
+    console.log('Logout function called');
+
     if (supabase) {
       try {
+        console.log('Calling Supabase signOut...');
         const { error } = await supabase.auth.signOut();
         if (error) {
           console.error('Logout error:', error);
+        } else {
+          console.log('Supabase signOut successful');
         }
       } catch (error) {
         console.error('Logout error:', error);
       }
     }
 
+    console.log('Setting auth state to logged out');
     setAuthState({
       isLoading: false,
       error: null,
