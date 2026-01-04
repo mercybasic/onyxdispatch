@@ -4,18 +4,32 @@ import RequestCard from '../common/RequestCard';
 import { SERVICE_TYPES } from '../../config/constants';
 import { formatTime } from '../../utils/helpers';
 
-const Dashboard = ({ requests, crews, users, currentUser, onNewRequest, onSelectRequest }) => {
+const Dashboard = ({ requests, crews, users, activityLog = [], currentUser, onNewRequest, onSelectRequest }) => {
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const activeRequests = requests.filter(r => ['assigned', 'in-progress'].includes(r.status));
   const availableCrews = crews.filter(c => c.status === 'available');
   const onlinePersonnel = users.filter(u => u.online);
 
-  const recentActivity = [
-    { icon: '📡', text: 'New SAR request received from Citizen_Jake', time: Date.now() - 120000 },
-    { icon: '🚀', text: 'Phoenix Squadron dispatched to Daymar', time: Date.now() - 900000 },
-    { icon: '✅', text: 'Refueling mission completed by Starrunner Team', time: Date.now() - 3600000 },
-    { icon: '👤', text: 'Pilot Nova came online', time: Date.now() - 5400000 },
-  ];
+  // Map activity types to icons
+  const getActivityIcon = (type) => {
+    const icons = {
+      request_created: '📡',
+      request_assigned: '🚀',
+      crew_dispatched: '🚁',
+      mission_completed: '✅',
+      user_joined: '👤',
+      user_left: '👋',
+      request_updated: '🔄'
+    };
+    return icons[type] || '📌';
+  };
+
+  // Use real activity log data
+  const recentActivity = activityLog.slice(0, 10).map(activity => ({
+    icon: getActivityIcon(activity.type),
+    text: activity.message,
+    time: activity.createdAt
+  }));
 
   return (
     <div className="main-content">

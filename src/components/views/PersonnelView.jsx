@@ -1,5 +1,4 @@
-import React from 'react';
-import { STATUS_COLORS } from '../../config/constants';
+import { useState } from 'react';
 
 const PersonnelView = ({ users, crews }) => {
   const [filter, setFilter] = useState('all');

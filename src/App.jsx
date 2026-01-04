@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import useDiscordAuth from './hooks/useDiscordAuth';
-import { INITIAL_USERS, INITIAL_CREWS, INITIAL_REQUESTS } from './data/mockData';
+import useSupabaseData from './hooks/useSupabaseData';
 import { DISCORD_INVITE_LINK } from './config/discord';
-import { generateId } from './utils/helpers';
 import { validateEnvVars } from './config/env-check';
 import Header from './components/layout/Header';
 import NavTabs from './components/layout/NavTabs';
@@ -18,8 +17,6 @@ import './styles/main.css';
 
 export default function DispatchSystem() {
   const [showLogin, setShowLogin] = useState(false);
-  const [crews, setCrews] = useState(INITIAL_CREWS);
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [toast, setToast] = useState(null);
@@ -34,6 +31,21 @@ export default function DispatchSystem() {
     logout,
     clearError: clearAuthError,
   } = useDiscordAuth();
+
+  // Supabase data management
+  const {
+    crews,
+    requests,
+    users,
+    activityLog,
+    loading: dataLoading,
+    syncUser,
+    createRequest,
+    assignCrew,
+    updateRequestStatus,
+    createCrew,
+    updateCrewStatus
+  } = useSupabaseData(currentUser);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -51,13 +63,14 @@ export default function DispatchSystem() {
     }
   }, [showToast]);
 
-  // Show toast on successful login
+  // Sync user to database on login
   useEffect(() => {
     if (isAuthenticated && currentUser) {
+      syncUser(currentUser);
       showToast(`Welcome back, ${currentUser.name}!`);
       setShowLogin(false);
     }
-  }, [isAuthenticated, currentUser, showToast]);
+  }, [isAuthenticated, currentUser, syncUser, showToast]);
 
   const handleLogout = () => {
     logout();
@@ -65,84 +78,88 @@ export default function DispatchSystem() {
     setActiveTab('dashboard');
   };
 
-  const handleClientRequest = (formData) => {
-    const id = generateId();
-    const newRequest = {
-      id,
-      type: formData.type,
-      priority: formData.priority,
-      location: formData.location,
-      description: formData.description,
-      status: 'pending',
-      requesterId: null,
-      requesterName: formData.clientName,
-      discordUsername: formData.discordUsername,
-      createdAt: Date.now(),
-      assignedCrew: null,
-      dispatcherId: null,
-    };
-    setRequests(prev => [newRequest, ...prev]);
-    return id;
-  };
+  const handleClientRequest = async (formData) => {
+    try {
+      const requestData = {
+        type: formData.type,
+        priority: formData.priority,
+        location: formData.location,
+        description: formData.description,
+        requesterName: formData.clientName,
+        discordUsername: formData.discordUsername,
+      };
 
-  const handleNewRequest = (formData) => {
-    const newRequest = {
-      id: generateId(),
-      ...formData,
-      status: 'pending',
-      requesterId: currentUser.id,
-      requesterName: currentUser.name,
-      createdAt: Date.now(),
-      assignedCrew: null,
-      dispatcherId: null,
-    };
-    setRequests(prev => [newRequest, ...prev]);
-    showToast('Service request submitted successfully!');
-  };
-
-  const handleAssignCrew = (requestId, crewId) => {
-    setRequests(prev => prev.map(r => 
-      r.id === requestId 
-        ? { ...r, assignedCrew: crewId, status: 'assigned', dispatcherId: currentUser.id }
-        : r
-    ));
-    setCrews(prev => prev.map(c =>
-      c.id === crewId ? { ...c, status: 'on-mission' } : c
-    ));
-    const crew = crews.find(c => c.id === crewId);
-    showToast(`${crew?.name} has been dispatched!`);
-  };
-
-  const handleUpdateStatus = (requestId, status) => {
-    setRequests(prev => prev.map(r => 
-      r.id === requestId ? { ...r, status } : r
-    ));
-    
-    if (status === 'completed' || status === 'cancelled') {
-      const request = requests.find(r => r.id === requestId);
-      if (request?.assignedCrew) {
-        setCrews(prev => prev.map(c =>
-          c.id === request.assignedCrew ? { ...c, status: 'available' } : c
-        ));
+      const newRequest = await createRequest(requestData);
+      if (newRequest) {
+        showToast('Request submitted successfully!');
+        return newRequest.id;
       }
+    } catch (error) {
+      showToast('Failed to submit request', 'error');
+      console.error('Error creating request:', error);
     }
-    
-    showToast(`Request status updated to ${status}`);
   };
 
-  const handleUpdateCrew = (crewId, data) => {
-    setCrews(prev => prev.map(c =>
-      c.id === crewId ? { ...c, ...data } : c
-    ));
-    showToast('Crew updated successfully!');
+  const handleNewRequest = async (formData) => {
+    try {
+      const requestData = {
+        ...formData,
+        requesterName: currentUser.name,
+        discordUsername: currentUser.name,
+      };
+
+      await createRequest(requestData);
+      showToast('Service request submitted successfully!');
+    } catch (error) {
+      showToast('Failed to submit request', 'error');
+      console.error('Error creating request:', error);
+    }
+  };
+
+  const handleAssignCrew = async (requestId, crewId) => {
+    try {
+      await assignCrew(requestId, crewId);
+      await updateCrewStatus(crewId, 'on-mission');
+      const crew = crews.find(c => c.id === crewId);
+      showToast(`${crew?.name} has been dispatched!`);
+    } catch (error) {
+      showToast('Failed to assign crew', 'error');
+      console.error('Error assigning crew:', error);
+    }
+  };
+
+  const handleUpdateStatus = async (requestId, status) => {
+    try {
+      await updateRequestStatus(requestId, status);
+
+      if (status === 'completed' || status === 'cancelled') {
+        const request = requests.find(r => r.id === requestId);
+        if (request?.assignedCrew) {
+          await updateCrewStatus(request.assignedCrew, 'available');
+        }
+      }
+
+      showToast(`Request status updated to ${status}`);
+    } catch (error) {
+      showToast('Failed to update status', 'error');
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleUpdateCrew = async (crewId, data) => {
+    try {
+      if (data.status) {
+        await updateCrewStatus(crewId, data.status);
+      }
+      showToast('Crew updated successfully!');
+    } catch (error) {
+      showToast('Failed to update crew', 'error');
+      console.error('Error updating crew:', error);
+    }
   };
 
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const isDispatcher = currentUser?.role === 'dispatcher';
-
-  // In production, users would come from your backend based on Discord guild members
-  // For now, we use mock data for crew member display
-  const users = INITIAL_USERS;
 
   // Show landing page for unauthenticated users
   if (!isAuthenticated && !showLogin) {
@@ -196,16 +213,14 @@ export default function DispatchSystem() {
         />
 
         {activeTab === 'dashboard' && (
-          <Dashboard 
+          <Dashboard
             requests={requests}
             crews={crews}
             users={users}
+            activityLog={activityLog}
             currentUser={currentUser}
             onNewRequest={() => setShowNewRequestModal(true)}
-            onSelectRequest={(request) => {
-              setSelectedRequest(request);
-              setActiveTab('requests');
-            }}
+            onSelectRequest={() => setActiveTab('requests')}
           />
         )}
 
