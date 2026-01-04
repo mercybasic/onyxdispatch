@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import CrewCard from '../common/CrewCard';
 import ManageCrewModal from '../modals/ManageCrewModal';
+import CreateCrewModal from '../modals/CreateCrewModal';
 import { STATUS_COLORS } from '../../config/constants';
 
-const CrewsView = ({ crews, users, currentUser, onUpdateCrew }) => {
+const CrewsView = ({ crews, users, currentUser, onUpdateCrew, onCreateCrew }) => {
   const [selectedCrew, setSelectedCrew] = useState(null);
   const [showManageModal, setShowManageModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [filter, setFilter] = useState('all');
 
   const isDispatcher = currentUser.role === 'dispatcher';
@@ -52,18 +54,28 @@ const CrewsView = ({ crews, users, currentUser, onUpdateCrew }) => {
               <span className="panel-title-icon">🚀</span>
               All Crews
             </h2>
-            <select 
-              className="form-select" 
-              style={{ width: 'auto' }}
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="on-mission">On Mission</option>
-              <option value="standby">Standby</option>
-              <option value="offline">Offline</option>
-            </select>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {isDispatcher && (
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  + Create Crew
+                </button>
+              )}
+              <select
+                className="form-select"
+                style={{ width: 'auto' }}
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="on-mission">On Mission</option>
+                <option value="standby">Standby</option>
+                <option value="offline">Offline</option>
+              </select>
+            </div>
           </div>
           <div className="panel-body" style={{ maxHeight: '600px' }}>
             {filteredCrews.map(crew => (
@@ -178,6 +190,13 @@ const CrewsView = ({ crews, users, currentUser, onUpdateCrew }) => {
             onUpdateCrew(crewId, data);
             setSelectedCrew(prev => ({...prev, ...data}));
           }}
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateCrewModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={onCreateCrew}
         />
       )}
     </div>

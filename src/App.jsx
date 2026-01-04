@@ -158,6 +158,16 @@ export default function DispatchSystem() {
     }
   };
 
+  const handleCreateCrew = async (crewData) => {
+    try {
+      await createCrew(crewData);
+      showToast('Crew created successfully!');
+    } catch (error) {
+      showToast('Failed to create crew', 'error');
+      console.error('Error creating crew:', error);
+    }
+  };
+
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const isDispatcher = currentUser?.role === 'dispatcher';
 
@@ -242,6 +252,7 @@ export default function DispatchSystem() {
             users={users}
             currentUser={currentUser}
             onUpdateCrew={handleUpdateCrew}
+            onCreateCrew={handleCreateCrew}
           />
         )}
 
