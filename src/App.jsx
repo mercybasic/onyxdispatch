@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import useDiscordAuth from './hooks/useDiscordAuth';
 import useSupabaseData from './hooks/useSupabaseData';
+import useNotifications from './hooks/useNotifications';
 import { DISCORD_INVITE_LINK } from './config/discord';
 import { validateEnvVars } from './config/env-check';
 import Header from './components/layout/Header';
@@ -47,6 +48,17 @@ export default function DispatchSystem() {
     updateCrewStatus
   } = useSupabaseData(currentUser);
 
+  // Notification management
+  const {
+    isSupported: notificationsSupported,
+    permission: notificationPermission,
+    requestPermission,
+    showNotification
+  } = useNotifications();
+
+  // Track previous requests count to detect new requests
+  const prevRequestsCount = useRef(0);
+
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
@@ -69,8 +81,51 @@ export default function DispatchSystem() {
       syncUser(currentUser);
       showToast(`Welcome back, ${currentUser.name}!`);
       setShowLogin(false);
+
+      // Request notification permission for dispatchers
+      if (currentUser.role === 'dispatcher' && notificationsSupported && notificationPermission === 'default') {
+        setTimeout(() => {
+          requestPermission();
+        }, 2000); // Wait 2 seconds after login to request permission
+      }
     }
-  }, [isAuthenticated, currentUser, syncUser, showToast]);
+  }, [isAuthenticated, currentUser, syncUser, showToast, notificationsSupported, notificationPermission, requestPermission]);
+
+  // Detect new requests and send notifications
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser || currentUser.role !== 'dispatcher') {
+      return;
+    }
+
+    const currentRequestsCount = requests.filter(r => r.status === 'pending').length;
+
+    // Only notify if there are more pending requests than before
+    if (prevRequestsCount.current > 0 && currentRequestsCount > prevRequestsCount.current) {
+      const newRequestsCount = currentRequestsCount - prevRequestsCount.current;
+      const newRequests = requests
+        .filter(r => r.status === 'pending')
+        .slice(0, newRequestsCount);
+
+      // Show notification for new requests
+      newRequests.forEach(request => {
+        showNotification('🚨 New Service Request', {
+          body: `${request.type} - ${request.location}\nPriority: ${request.priority}`,
+          tag: `request-${request.id}`,
+          requireInteraction: request.priority === 'critical',
+          data: { requestId: request.id, type: 'new-request' }
+        });
+      });
+
+      // Also show toast notification
+      if (newRequestsCount === 1) {
+        showToast(`New service request received!`, 'info');
+      } else {
+        showToast(`${newRequestsCount} new service requests received!`, 'info');
+      }
+    }
+
+    prevRequestsCount.current = currentRequestsCount;
+  }, [requests, isAuthenticated, currentUser, showNotification, showToast]);
 
   const handleLogout = () => {
     logout();
