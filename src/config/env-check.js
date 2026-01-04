@@ -2,12 +2,14 @@
 // This helps debug configuration issues in production
 
 export const validateEnvVars = () => {
+  // Only Supabase credentials are required now
+  // Discord OAuth is configured in Supabase, not via environment variables
   const required = {
-    VITE_DISCORD_CLIENT_ID: import.meta.env.VITE_DISCORD_CLIENT_ID,
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
     VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
   };
 
+  // Discord-related vars are optional and only used for advanced features
   const optional = {
     VITE_DISCORD_SERVER_ID: import.meta.env.VITE_DISCORD_SERVER_ID,
     VITE_DISPATCHER_ROLE_ID: import.meta.env.VITE_DISPATCHER_ROLE_ID,
@@ -19,19 +21,20 @@ export const validateEnvVars = () => {
   const missing = [];
   const placeholder = [];
 
-  // Check required variables
+  // Check required variables (only Supabase now)
   Object.entries(required).forEach(([key, value]) => {
     if (!value) {
       missing.push(key);
-    } else if (value.startsWith('your') || value.startsWith('YOUR')) {
+    } else if (value.startsWith('your') || value.startsWith('YOUR') || value.startsWith('https://your')) {
       placeholder.push({ key, value });
     }
   });
 
-  // Check optional variables for placeholders
+  // Optional variables don't cause validation to fail
+  const optionalWarnings = [];
   Object.entries(optional).forEach(([key, value]) => {
     if (value && (value.startsWith('your') || value.startsWith('YOUR'))) {
-      placeholder.push({ key, value });
+      optionalWarnings.push({ key, value });
     }
   });
 
@@ -39,6 +42,7 @@ export const validateEnvVars = () => {
     isValid: missing.length === 0 && placeholder.length === 0,
     missing,
     placeholder,
+    optionalWarnings,
     config: { ...required, ...optional },
   };
 };
