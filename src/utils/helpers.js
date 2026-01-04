@@ -23,6 +23,14 @@ export const generateOAuthState = () => {
 
 export const getDiscordOAuthUrl = () => {
   const state = generateOAuthState();
+
+  // Debug logging for production
+  console.log('Discord OAuth Config:', {
+    clientId: DISCORD_OAUTH_CONFIG.clientId,
+    envVar: import.meta.env.VITE_DISCORD_CLIENT_ID,
+    redirectUri: DISCORD_OAUTH_CONFIG.redirectUri
+  });
+
   const params = new URLSearchParams({
     client_id: DISCORD_OAUTH_CONFIG.clientId,
     redirect_uri: DISCORD_OAUTH_CONFIG.redirectUri,

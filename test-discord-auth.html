@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Discord OAuth via Supabase</title>
+</head>
+<body>
+  <h1>Test Discord OAuth</h1>
+  <button id="loginBtn">Test Discord Login</button>
+  <div id="status"></div>
+  <pre id="result"></pre>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'https://spswzhwasnouxaaagtyw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwc3d6aHdhc25vdXhhYWFndHl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0NjA3NzAsImV4cCI6MjA4MzAzNjc3MH0.CKxCOGlJXngN3-nyu_IYl1I2p0gbbnUKb4ViyTwc7Ks';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const statusDiv = document.getElementById('status');
+    const resultPre = document.getElementById('result');
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      statusDiv.textContent = 'Attempting Discord login...';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'discord',
+          options: {
+            redirectTo: window.location.origin,
+            scopes: 'identify email',
+          },
+        });
+
+        if (error) {
+          statusDiv.textContent = 'Error!';
+          resultPre.textContent = JSON.stringify({
+            error: error.message,
+            details: error
+          }, null, 2);
+        } else {
+          statusDiv.textContent = 'Redirecting to Discord...';
+          resultPre.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        statusDiv.textContent = 'Exception caught!';
+        resultPre.textContent = JSON.stringify({
+          error: err.message,
+          stack: err.stack
+        }, null, 2);
+      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (session) {
+        statusDiv.textContent = 'Already logged in!';
+        resultPre.textContent = JSON.stringify(session.user, null, 2);
+      } else if (error) {
+        statusDiv.textContent = 'Session check error';
+        resultPre.textContent = JSON.stringify(error, null, 2);
+      } else {
+        statusDiv.textContent = 'Not logged in';
+      }
+    });
+  </script>
+</body>
+</html>
