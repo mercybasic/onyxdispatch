@@ -4,6 +4,13 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Drop existing tables if they exist (in reverse order of dependencies)
+DROP TABLE IF EXISTS activity_log CASCADE;
+DROP TABLE IF EXISTS crew_members CASCADE;
+DROP TABLE IF EXISTS service_requests CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS crews CASCADE;
+
 -- Crews table (must be created first due to foreign key reference from users)
 CREATE TABLE crews (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
