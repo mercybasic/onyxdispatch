@@ -5,7 +5,7 @@ const Header = ({ currentUser, onLogout }) => (
     <div className="logo">
       <div className="logo-icon">📡</div>
       <div>
-        <div className="logo-text">STELLAR DISPATCH</div>
+        <div className="logo-text">ONYX</div>
         <div className="logo-subtitle">Emergency Services Network</div>
       </div>
     </div>
