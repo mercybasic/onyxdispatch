@@ -1,45 +1,7 @@
 import { DISCORD_INVITE_LINK } from '../../config/discord';
 
-const LoginScreen = ({ onBack, authState, onInitiateLogin, onDemoLogin, onClearError }) => {
+const LoginScreen = ({ onBack, authState, onInitiateLogin, onClearError }) => {
   const { isLoading, error } = authState;
-
-  // Demo users for testing without actual Discord OAuth
-  const demoUsers = [
-    { 
-      id: 'demo_dispatcher_1', 
-      name: 'Commander Reyes', 
-      role: 'dispatcher', 
-      avatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
-      discriminator: '0001',
-      discordId: '123456789',
-    },
-    { 
-      id: 'demo_dispatcher_2', 
-      name: 'Dispatcher Orion', 
-      role: 'dispatcher', 
-      avatar: 'https://cdn.discordapp.com/embed/avatars/1.png',
-      discriminator: '0002',
-      discordId: '123456790',
-    },
-    { 
-      id: 'demo_pilot_1', 
-      name: 'Pilot Nova', 
-      role: 'pilot', 
-      avatar: 'https://cdn.discordapp.com/embed/avatars/2.png',
-      discriminator: '0003',
-      discordId: '123456791',
-      crewId: 'c1',
-    },
-    { 
-      id: 'demo_crew_1', 
-      name: 'Engineer Kaz', 
-      role: 'crew', 
-      avatar: 'https://cdn.discordapp.com/embed/avatars/3.png',
-      discriminator: '0004',
-      discordId: '123456792',
-      crewId: 'c1',
-    },
-  ];
 
   return (
     <div className="login-container">
@@ -99,34 +61,6 @@ const LoginScreen = ({ onBack, authState, onInitiateLogin, onDemoLogin, onClearE
               >
                 Not a member? Join our Discord server →
               </a>
-            </div>
-
-            <div className="demo-section">
-              <div className="demo-divider">
-                <span>Demo Mode</span>
-              </div>
-              <p className="demo-description">
-                For testing purposes, select a demo account below:
-              </p>
-              <div className="demo-users-grid">
-                {demoUsers.map(user => (
-                  <button 
-                    key={user.id}
-                    className="demo-user-btn"
-                    onClick={() => onDemoLogin(user)}
-                  >
-                    <img 
-                      src={user.avatar} 
-                      alt={user.name}
-                      className="demo-user-avatar"
-                    />
-                    <div className="demo-user-info">
-                      <span className="demo-user-name">{user.name}</span>
-                      <span className={`demo-user-role role-${user.role}`}>{user.role}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           </>
         )}

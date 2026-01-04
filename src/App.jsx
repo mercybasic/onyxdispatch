@@ -25,13 +25,12 @@ export default function DispatchSystem() {
   const [toast, setToast] = useState(null);
 
   // Discord OAuth authentication
-  const { 
-    isLoading: authLoading, 
-    error: authError, 
-    isAuthenticated, 
+  const {
+    isLoading: authLoading,
+    error: authError,
+    isAuthenticated,
     user: currentUser,
     initiateLogin,
-    handleDemoLogin,
     logout,
     clearError: clearAuthError,
   } = useDiscordAuth();
@@ -177,7 +176,6 @@ export default function DispatchSystem() {
           onBack={() => setShowLogin(false)}
           authState={{ isLoading: authLoading, error: authError }}
           onInitiateLogin={initiateLogin}
-          onDemoLogin={handleDemoLogin}
           onClearError={clearAuthError}
         />
       </div>
