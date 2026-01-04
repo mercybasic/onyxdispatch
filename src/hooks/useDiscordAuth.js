@@ -39,6 +39,17 @@ export const useDiscordAuth = () => {
       }
 
       try {
+        // First, check if we're handling an OAuth callback
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+
+        if (accessToken) {
+          console.log('OAuth callback detected, exchanging token...');
+          // Let Supabase handle the OAuth callback
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Give Supabase time to process
+        }
+
+        // Now get the session
         const { data: { session }, error } = await supabase.auth.getSession();
 
         console.log('Initial session check:', { hasSession: !!session, error });
@@ -81,16 +92,19 @@ export const useDiscordAuth = () => {
     // Listen for auth state changes
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session?.user ? 'User present' : 'No user');
 
         if (event === 'SIGNED_IN' && session?.user) {
+          console.log('Processing SIGNED_IN event, user metadata:', session.user.user_metadata);
           const appUser = {
             id: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'Discord User',
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || 'Discord User',
             avatar: session.user.user_metadata?.avatar_url,
-            discordId: session.user.user_metadata?.provider_id,
+            discordId: session.user.user_metadata?.provider_id || session.user.id,
             role: 'dispatcher',
           };
+
+          console.log('Setting authenticated user:', appUser);
 
           setAuthState({
             isLoading: false,
@@ -99,12 +113,30 @@ export const useDiscordAuth = () => {
             user: appUser,
           });
         } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
           setAuthState({
             isLoading: false,
             error: null,
             isAuthenticated: false,
             user: null,
           });
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed, updating user data');
+          if (session?.user) {
+            const appUser = {
+              id: session.user.id,
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || 'Discord User',
+              avatar: session.user.user_metadata?.avatar_url,
+              discordId: session.user.user_metadata?.provider_id || session.user.id,
+              role: 'dispatcher',
+            };
+            setAuthState({
+              isLoading: false,
+              error: null,
+              isAuthenticated: true,
+              user: appUser,
+            });
+          }
         }
       });
 
