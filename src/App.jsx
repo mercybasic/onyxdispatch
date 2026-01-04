@@ -41,6 +41,8 @@ export default function DispatchSystem() {
     activityLog,
     loading: dataLoading,
     syncUser,
+    updatePresence,
+    setUserOffline,
     createRequest,
     assignCrew,
     updateRequestStatus,
@@ -127,7 +129,57 @@ export default function DispatchSystem() {
     prevRequestsCount.current = currentRequestsCount;
   }, [requests, isAuthenticated, currentUser, showNotification, showToast]);
 
-  const handleLogout = () => {
+  // Presence heartbeat - update last_seen every 60 seconds
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.id) {
+      return;
+    }
+
+    // Initial presence update
+    updatePresence(currentUser.id);
+
+    // Set up heartbeat interval (every 60 seconds)
+    const heartbeatInterval = setInterval(() => {
+      updatePresence(currentUser.id);
+    }, 60000); // 60 seconds
+
+    // Clean up on unmount or user change
+    return () => {
+      clearInterval(heartbeatInterval);
+    };
+  }, [isAuthenticated, currentUser, updatePresence]);
+
+  // Handle page unload/close - set user offline
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const handleBeforeUnload = () => {
+      // Set user offline when page is closing
+      setUserOffline(currentUser.id);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setUserOffline(currentUser.id);
+      } else {
+        updatePresence(currentUser.id);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [currentUser, setUserOffline, updatePresence]);
+
+  const handleLogout = async () => {
+    // Set user offline before logging out
+    if (currentUser?.id) {
+      await setUserOffline(currentUser.id);
+    }
     logout();
     setShowLogin(false);
     setActiveTab('dashboard');

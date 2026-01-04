@@ -165,7 +165,8 @@ export const useSupabaseData = (currentUser) => {
           name: user.name,
           avatar: user.avatar,
           role: user.role || 'crew',
-          online: true
+          online: true,
+          last_seen: new Date().toISOString()
         }, {
           onConflict: 'discord_id'
         })
@@ -176,6 +177,40 @@ export const useSupabaseData = (currentUser) => {
       return data;
     } catch (err) {
       console.error('Error syncing user:', err);
+    }
+  };
+
+  // Update user's last_seen timestamp (heartbeat)
+  const updatePresence = async (userId) => {
+    if (!supabase || !userId) return;
+
+    try {
+      await supabase
+        .from('users')
+        .update({
+          online: true,
+          last_seen: new Date().toISOString()
+        })
+        .eq('id', userId);
+    } catch (err) {
+      console.error('Error updating presence:', err);
+    }
+  };
+
+  // Set user offline
+  const setUserOffline = async (userId) => {
+    if (!supabase || !userId) return;
+
+    try {
+      await supabase
+        .from('users')
+        .update({
+          online: false,
+          last_seen: new Date().toISOString()
+        })
+        .eq('id', userId);
+    } catch (err) {
+      console.error('Error setting user offline:', err);
     }
   };
 
@@ -324,6 +359,8 @@ export const useSupabaseData = (currentUser) => {
     loading,
     error,
     syncUser,
+    updatePresence,
+    setUserOffline,
     createRequest,
     assignCrew,
     updateRequestStatus,
