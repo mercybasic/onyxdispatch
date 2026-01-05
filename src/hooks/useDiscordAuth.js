@@ -41,15 +41,34 @@ export const useDiscordAuth = () => {
         }
 
         if (session?.user) {
+          // Fetch user role from database
+          const discordId = session.user.user_metadata?.provider_id || session.user.id;
+          let userRole = 'crew'; // Default role
+
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('discord_id', discordId)
+              .single();
+
+            if (userData?.role) {
+              userRole = userData.role;
+            }
+          } catch (err) {
+            console.warn('Could not fetch user role on init, using default:', err);
+          }
+
           // Map Supabase user to our app user format
           const appUser = {
             id: session.user.id,
             name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'Discord User',
             avatar: session.user.user_metadata?.avatar_url,
-            discordId: session.user.user_metadata?.provider_id,
-            role: 'dispatcher', // Default role, can be determined from Discord roles later
+            discordId: discordId,
+            role: userRole,
           };
 
+          console.log('Initial auth - user loaded:', appUser);
           setAuthState({
             isLoading: false,
             error: null,
@@ -57,6 +76,7 @@ export const useDiscordAuth = () => {
             user: appUser,
           });
         } else {
+          console.log('Initial auth - no session');
           setAuthState({ isLoading: false, error: null, isAuthenticated: false, user: null });
         }
       } catch (error) {
@@ -70,15 +90,36 @@ export const useDiscordAuth = () => {
     // Listen for auth state changes
     if (supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state change:', event, 'Session exists:', !!session);
+
         if (event === 'SIGNED_IN' && session?.user) {
+          // Fetch user role from database
+          const discordId = session.user.user_metadata?.provider_id || session.user.id;
+          let userRole = 'crew'; // Default role
+
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('discord_id', discordId)
+              .single();
+
+            if (userData?.role) {
+              userRole = userData.role;
+            }
+          } catch (err) {
+            console.warn('Could not fetch user role, using default:', err);
+          }
+
           const appUser = {
             id: session.user.id,
             name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || 'Discord User',
             avatar: session.user.user_metadata?.avatar_url,
-            discordId: session.user.user_metadata?.provider_id || session.user.id,
-            role: 'dispatcher',
+            discordId: discordId,
+            role: userRole,
           };
 
+          console.log('Setting authenticated user:', appUser);
           setAuthState({
             isLoading: false,
             error: null,
@@ -86,6 +127,7 @@ export const useDiscordAuth = () => {
             user: appUser,
           });
         } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing auth state');
           setAuthState({
             isLoading: false,
             error: null,
@@ -93,13 +135,33 @@ export const useDiscordAuth = () => {
             user: null,
           });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Fetch user role from database for token refresh too
+          const discordId = session.user.user_metadata?.provider_id || session.user.id;
+          let userRole = 'crew'; // Default role
+
+          try {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('discord_id', discordId)
+              .single();
+
+            if (userData?.role) {
+              userRole = userData.role;
+            }
+          } catch (err) {
+            console.warn('Could not fetch user role on token refresh, using default:', err);
+          }
+
           const appUser = {
             id: session.user.id,
             name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || 'Discord User',
             avatar: session.user.user_metadata?.avatar_url,
-            discordId: session.user.user_metadata?.provider_id || session.user.id,
-            role: 'dispatcher',
+            discordId: discordId,
+            role: userRole,
           };
+
+          console.log('Token refreshed, updating user:', appUser);
           setAuthState({
             isLoading: false,
             error: null,
