@@ -3,12 +3,17 @@ import { useState } from 'react';
 const PersonnelView = ({ users, crews }) => {
   const [filter, setFilter] = useState('all');
 
+  console.log('PersonnelView - All users:', users);
+  console.log('PersonnelView - Online users:', users.filter(u => u.online));
+
   const filteredUsers = users.filter(u => {
     if (filter === 'all') return true;
     if (filter === 'online') return u.online;
     if (filter === 'offline') return !u.online;
     return u.role === filter;
   });
+
+  console.log('PersonnelView - Filtered users:', filteredUsers);
 
   const getUserCrew = (userId) => crews.find(c => c.members.includes(userId));
 
