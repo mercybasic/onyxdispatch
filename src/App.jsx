@@ -178,22 +178,27 @@ export default function DispatchSystem() {
   const handleLogout = async () => {
     console.log('handleLogout called, currentUser:', currentUser);
 
-    try {
-      // Set user offline before logging out
-      if (currentUser?.discordId) {
-        console.log('Setting user offline with discordId:', currentUser.discordId);
-        await setUserOffline(currentUser.discordId);
-        console.log('User set offline successfully');
-      }
+    // Try to set user offline, but don't let it block logout
+    if (currentUser?.discordId) {
+      console.log('Attempting to set user offline with discordId:', currentUser.discordId);
+      setUserOffline(currentUser.discordId).catch(err => {
+        console.warn('Could not set user offline (non-critical):', err);
+      });
+    }
 
+    // Always proceed with logout regardless of offline status update
+    try {
       console.log('Calling logout...');
       await logout();
-      console.log('Logout completed');
+      console.log('Logout completed successfully');
 
       setShowLogin(false);
       setActiveTab('dashboard');
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Critical error during logout:', error);
+      // Even if logout fails, try to reset the UI
+      setShowLogin(false);
+      setActiveTab('dashboard');
     }
   };
 

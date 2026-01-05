@@ -217,6 +217,8 @@ export const useSupabaseData = (currentUser) => {
     if (!supabase || !userIdentifier) return;
 
     try {
+      console.log('setUserOffline called with:', userIdentifier);
+
       // Try to update by discord_id first (most common case)
       const { data, error } = await supabase
         .from('users')
@@ -227,20 +229,35 @@ export const useSupabaseData = (currentUser) => {
         .eq('discord_id', userIdentifier)
         .select();
 
+      if (error) {
+        console.error('Error updating by discord_id:', error);
+        throw error;
+      }
+
+      console.log('setUserOffline result:', data);
+
       // If no rows updated, try by database id
       if (data && data.length === 0) {
-        await supabase
+        console.log('No rows updated by discord_id, trying by id...');
+        const { data: data2, error: error2 } = await supabase
           .from('users')
           .update({
             online: false,
             last_seen: new Date().toISOString()
           })
-          .eq('id', userIdentifier);
-      }
+          .eq('id', userIdentifier)
+          .select();
 
-      if (error) throw error;
+        if (error2) {
+          console.error('Error updating by id:', error2);
+          throw error2;
+        }
+
+        console.log('setUserOffline by id result:', data2);
+      }
     } catch (err) {
       console.error('Error setting user offline:', err);
+      // Don't throw - we want logout to continue even if this fails
     }
   };
 
