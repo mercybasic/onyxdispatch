@@ -176,7 +176,9 @@ export default function DispatchSystem() {
   }, [currentUser, setUserOffline, updatePresence]);
 
   const handleLogout = async () => {
+    console.log('=== LOGOUT STARTED ===');
     console.log('handleLogout called, currentUser:', currentUser);
+    console.log('isAuthenticated before logout:', isAuthenticated);
 
     // Try to set user offline, but don't let it block logout
     if (currentUser?.discordId) {
@@ -188,17 +190,29 @@ export default function DispatchSystem() {
 
     // Always proceed with logout regardless of offline status update
     try {
-      console.log('Calling logout...');
+      console.log('Calling logout function...');
       await logout();
-      console.log('Logout completed successfully');
+      console.log('Logout function completed');
 
+      // Force UI reset
+      console.log('Forcing UI reset...');
       setShowLogin(false);
       setActiveTab('dashboard');
+
+      // Force page reload as last resort to clear all state
+      console.log('Reloading page to ensure clean logout...');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+
+      console.log('=== LOGOUT COMPLETED ===');
     } catch (error) {
       console.error('Critical error during logout:', error);
-      // Even if logout fails, try to reset the UI
-      setShowLogin(false);
-      setActiveTab('dashboard');
+      // Even if logout fails, force reload
+      console.log('Logout failed, forcing page reload anyway...');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     }
   };
 
