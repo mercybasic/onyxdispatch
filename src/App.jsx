@@ -131,7 +131,7 @@ export default function DispatchSystem() {
 
   // Presence heartbeat - update last_seen every 60 seconds
   useEffect(() => {
-    if (!isAuthenticated || !currentUser?.discordId) {
+    if (!isAuthenticated || !currentUser?.discordId || window._isLoggingOut) {
       return;
     }
 
@@ -140,7 +140,9 @@ export default function DispatchSystem() {
 
     // Set up heartbeat interval (every 60 seconds)
     const heartbeatInterval = setInterval(() => {
-      updatePresence(currentUser.discordId);
+      if (!window._isLoggingOut) {
+        updatePresence(currentUser.discordId);
+      }
     }, 60000); // 60 seconds
 
     // Clean up on unmount or user change
@@ -151,14 +153,18 @@ export default function DispatchSystem() {
 
   // Handle page unload/close - set user offline
   useEffect(() => {
-    if (!currentUser?.discordId) return;
+    if (!currentUser?.discordId || window._isLoggingOut) return;
 
     const handleBeforeUnload = () => {
-      // Set user offline when page is closing
-      setUserOffline(currentUser.discordId);
+      if (!window._isLoggingOut) {
+        // Set user offline when page is closing
+        setUserOffline(currentUser.discordId);
+      }
     };
 
     const handleVisibilityChange = () => {
+      if (window._isLoggingOut) return;
+
       if (document.hidden) {
         setUserOffline(currentUser.discordId);
       } else {
@@ -177,42 +183,34 @@ export default function DispatchSystem() {
 
   const handleLogout = async () => {
     console.log('=== LOGOUT STARTED ===');
-    console.log('handleLogout called, currentUser:', currentUser);
-    console.log('isAuthenticated before logout:', isAuthenticated);
 
-    // Try to set user offline, but don't let it block logout
-    if (currentUser?.discordId) {
-      console.log('Attempting to set user offline with discordId:', currentUser.discordId);
-      setUserOffline(currentUser.discordId).catch(err => {
-        console.warn('Could not set user offline (non-critical):', err);
-      });
+    // Prevent multiple simultaneous logout attempts
+    if (window._isLoggingOut) {
+      console.log('Logout already in progress, ignoring duplicate call');
+      return;
     }
+    window._isLoggingOut = true;
 
-    // Always proceed with logout regardless of offline status update
     try {
-      console.log('Calling logout function...');
+      console.log('Setting user offline...');
+      // Try to set user offline (non-blocking)
+      if (currentUser?.discordId) {
+        setUserOffline(currentUser.discordId).catch(err => {
+          console.warn('Could not set user offline:', err);
+        });
+      }
+
+      console.log('Calling Supabase signOut...');
       await logout();
-      console.log('Logout function completed');
 
-      // Force UI reset
-      console.log('Forcing UI reset...');
-      setShowLogin(false);
-      setActiveTab('dashboard');
+      console.log('Logout successful, redirecting...');
+      // Immediate redirect without delay to prevent loop
+      window.location.replace('/');
 
-      // Force page reload as last resort to clear all state
-      console.log('Reloading page to ensure clean logout...');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
-
-      console.log('=== LOGOUT COMPLETED ===');
     } catch (error) {
-      console.error('Critical error during logout:', error);
-      // Even if logout fails, force reload
-      console.log('Logout failed, forcing page reload anyway...');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 500);
+      console.error('Logout error:', error);
+      // Force redirect even on error
+      window.location.replace('/');
     }
   };
 
