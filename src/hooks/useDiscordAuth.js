@@ -219,14 +219,26 @@ export const useDiscordAuth = () => {
 
     try {
       console.log('Calling Supabase signOut...');
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) {
         console.error('Logout error:', error);
+        throw error;
+      }
+
+      console.log('Supabase signOut successful');
+
+      // Verify the session is actually gone
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.warn('Session still exists after signOut, forcing clear');
+        // Force clear by calling signOut again
+        await supabase.auth.signOut({ scope: 'local' });
       } else {
-        console.log('Supabase signOut successful');
+        console.log('Session verified as cleared');
       }
     } catch (error) {
       console.error('Logout error:', error);
+      // Continue anyway - the localStorage clear in App.jsx will handle cleanup
     }
 
     // Don't manually set state here - let the onAuthStateChange listener handle it

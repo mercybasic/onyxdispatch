@@ -212,18 +212,37 @@ export default function DispatchSystem() {
       console.log('Calling Supabase signOut...');
       await logout();
 
-      console.log('Logout successful, clearing state...');
-      // Small delay to ensure auth state change is processed
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('Logout successful, clearing local storage...');
+      // Clear all Supabase-related items from localStorage to ensure clean logout
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
 
       console.log('Redirecting to home...');
-      // Force a clean page reload
-      window.location.href = '/';
+      // Use replace to avoid back button issues
+      window.location.replace('/');
 
     } catch (error) {
       console.error('Logout error:', error);
-      // Force redirect even on error
-      window.location.href = '/';
+      // Force redirect even on error, clear storage first
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+      } catch (e) {
+        console.error('Could not clear localStorage:', e);
+      }
+      window.location.replace('/');
     }
   }, [currentUser, logout, setUserOffline]);
 
