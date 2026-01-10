@@ -108,7 +108,11 @@ export const useSupabaseData = (currentUser) => {
 
   // Set up real-time subscriptions
   useEffect(() => {
-    if (!supabase || !currentUser) return;
+    // Don't set up subscriptions during logout
+    if (!supabase || !currentUser || window._isLoggingOut) {
+      setLoading(false);
+      return;
+    }
 
     fetchData();
 
@@ -116,7 +120,9 @@ export const useSupabaseData = (currentUser) => {
     const crewsSubscription = supabase
       .channel('crews_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'crews' }, () => {
-        fetchData();
+        if (!window._isLoggingOut) {
+          fetchData();
+        }
       })
       .subscribe();
 
@@ -124,7 +130,9 @@ export const useSupabaseData = (currentUser) => {
     const requestsSubscription = supabase
       .channel('requests_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'service_requests' }, () => {
-        fetchData();
+        if (!window._isLoggingOut) {
+          fetchData();
+        }
       })
       .subscribe();
 
@@ -132,7 +140,9 @@ export const useSupabaseData = (currentUser) => {
     const usersSubscription = supabase
       .channel('users_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
-        fetchData();
+        if (!window._isLoggingOut) {
+          fetchData();
+        }
       })
       .subscribe();
 
@@ -140,7 +150,9 @@ export const useSupabaseData = (currentUser) => {
     const activitySubscription = supabase
       .channel('activity_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, () => {
-        fetchData();
+        if (!window._isLoggingOut) {
+          fetchData();
+        }
       })
       .subscribe();
 

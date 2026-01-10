@@ -65,8 +65,11 @@ export default function DispatchSystem() {
     setToast({ message, type });
   }, []);
 
-  // Check environment variables on mount
+  // Check environment variables on mount and reset logout flag
   useEffect(() => {
+    // Reset logout flag on mount
+    window._isLoggingOut = false;
+
     const envValidation = validateEnvVars();
     if (!envValidation.isValid && !import.meta.env.DEV) {
       console.error('Environment configuration error:', envValidation);
@@ -79,6 +82,9 @@ export default function DispatchSystem() {
 
   // Sync user to database on login
   useEffect(() => {
+    // Don't sync during logout
+    if (window._isLoggingOut) return;
+
     if (isAuthenticated && currentUser) {
       syncUser(currentUser);
       showToast(`Welcome back, ${currentUser.name}!`);
@@ -95,6 +101,9 @@ export default function DispatchSystem() {
 
   // Detect new requests and send notifications
   useEffect(() => {
+    // Don't process notifications during logout
+    if (window._isLoggingOut) return;
+
     if (!isAuthenticated || !currentUser || currentUser.role !== 'dispatcher') {
       return;
     }
@@ -181,7 +190,7 @@ export default function DispatchSystem() {
     };
   }, [currentUser, setUserOffline, updatePresence]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     console.log('=== LOGOUT STARTED ===');
 
     // Prevent multiple simultaneous logout attempts
@@ -193,7 +202,7 @@ export default function DispatchSystem() {
 
     try {
       console.log('Setting user offline...');
-      // Try to set user offline (non-blocking)
+      // Try to set user offline (non-blocking, don't wait)
       if (currentUser?.discordId) {
         setUserOffline(currentUser.discordId).catch(err => {
           console.warn('Could not set user offline:', err);
@@ -203,16 +212,20 @@ export default function DispatchSystem() {
       console.log('Calling Supabase signOut...');
       await logout();
 
-      console.log('Logout successful, redirecting...');
-      // Immediate redirect without delay to prevent loop
-      window.location.replace('/');
+      console.log('Logout successful, clearing state...');
+      // Small delay to ensure auth state change is processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('Redirecting to home...');
+      // Force a clean page reload
+      window.location.href = '/';
 
     } catch (error) {
       console.error('Logout error:', error);
       // Force redirect even on error
-      window.location.replace('/');
+      window.location.href = '/';
     }
-  };
+  }, [currentUser, logout, setUserOffline]);
 
   const handleClientRequest = async (formData) => {
     try {

@@ -206,27 +206,31 @@ export const useDiscordAuth = () => {
   const logout = async () => {
     console.log('Logout function called');
 
-    if (supabase) {
-      try {
-        console.log('Calling Supabase signOut...');
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error('Logout error:', error);
-        } else {
-          console.log('Supabase signOut successful');
-        }
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
+    if (!supabase) {
+      console.log('No supabase client, clearing state only');
+      setAuthState({
+        isLoading: false,
+        error: null,
+        isAuthenticated: false,
+        user: null,
+      });
+      return;
     }
 
-    console.log('Setting auth state to logged out');
-    setAuthState({
-      isLoading: false,
-      error: null,
-      isAuthenticated: false,
-      user: null,
-    });
+    try {
+      console.log('Calling Supabase signOut...');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+      } else {
+        console.log('Supabase signOut successful');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    // Don't manually set state here - let the onAuthStateChange listener handle it
+    // This prevents double state updates and race conditions
   };
 
   const clearError = () => {
