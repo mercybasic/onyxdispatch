@@ -201,6 +201,10 @@ export default function DispatchSystem() {
     window._isLoggingOut = true;
 
     try {
+      console.log('Setting logout flag in sessionStorage...');
+      // Set flag to prevent session restoration on next page load
+      sessionStorage.setItem('just_logged_out', 'true');
+
       console.log('Setting user offline...');
       // Try to set user offline (non-blocking, don't wait)
       if (currentUser?.discordId) {
@@ -223,6 +227,10 @@ export default function DispatchSystem() {
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
 
+      console.log('Waiting briefly for signOut to propagate...');
+      // Small delay to ensure signOut completes server-side
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       console.log('Redirecting to home...');
       // Use replace to avoid back button issues
       window.location.replace('/');
@@ -230,6 +238,7 @@ export default function DispatchSystem() {
     } catch (error) {
       console.error('Logout error:', error);
       // Force redirect even on error, clear storage first
+      sessionStorage.setItem('just_logged_out', 'true');
       try {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {

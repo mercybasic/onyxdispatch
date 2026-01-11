@@ -22,6 +22,19 @@ export const useDiscordAuth = () => {
       }
 
       try {
+        // Check if we just logged out - if so, don't restore session
+        const justLoggedOut = sessionStorage.getItem('just_logged_out');
+        if (justLoggedOut) {
+          console.log('Just logged out flag detected, clearing session and skipping restore');
+          sessionStorage.removeItem('just_logged_out');
+
+          // Force clear any remaining session
+          await supabase.auth.signOut({ scope: 'local' });
+
+          setAuthState({ isLoading: false, error: null, isAuthenticated: false, user: null });
+          return;
+        }
+
         // First, check if we're handling an OAuth callback
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
